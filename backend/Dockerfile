@@ -5,11 +5,11 @@ WORKDIR /app
 # Install Bun if not already present
 RUN command -v bun > /dev/null 2>&1 || npm install -g bun
 
-COPY package*.json ./
-RUN bun install --frozen-lockfile
+COPY package.json bun.lockb* ./
+RUN bun install
 
 COPY . .
-RUN bun run build
+RUN bunx tsc
 
 # --- Production stage ---
 FROM node:22-alpine
@@ -19,8 +19,8 @@ WORKDIR /app
 # Install Bun if not already present
 RUN command -v bun > /dev/null 2>&1 || npm install -g bun
 
-COPY package*.json ./
-RUN bun install --frozen-lockfile --production
+COPY package.json bun.lockb* ./
+RUN bun install --production
 
 COPY --from=builder /app/dist ./dist
 
