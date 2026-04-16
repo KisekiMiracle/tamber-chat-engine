@@ -1,6 +1,4 @@
 import express from "express";
-import { RouteTestQuery } from "./routes/test/query";
-import { SetupRouteSetup } from "./routes/setup/init";
 import { AuthRouteSetup } from "./routes/auth";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -34,8 +32,6 @@ app.get("/", (_req, res) => {
   res.send("Hello World!");
 });
 
-// Routing
-// SetupRouteSetup();
 AuthRouteSetup();
 
 server.listen(port, () => {

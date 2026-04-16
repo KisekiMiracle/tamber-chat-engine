@@ -1,15 +1,8 @@
 import "express";
+import { relations, type InferSelectModel } from "drizzle-orm";
 
 declare module "express-serve-static-core" {
   interface Request {
-    user?: {
-      id: string;
-      user_id: string;
-      displayname: string;
-      status: string;
-      status_emote: string;
-      badges: string[];
-      created_at: Date;
-    };
+    user?: InferSelectModel<typeof users>;
   }
 }

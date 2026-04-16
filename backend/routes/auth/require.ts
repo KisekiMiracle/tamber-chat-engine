@@ -1,7 +1,9 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import { SECRET_KEY } from "~/index";
-import { Client } from "~/utils/db";
+import { Client, db } from "~/utils/db";
+import { profiles, users } from "~/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function requireAuth(
   req: Request,
@@ -32,23 +34,19 @@ export async function requireAuth(
         maxAge: 1000 * 60 * 15,
       });
 
-      const user = (
-        await Client.query(
-          /* sql */ `
-        SELECT * FROM profiles
-        WHERE user_id=$1;
-      `,
-          [decoded.id],
-        )
-      ).rows[0];
-
-      if (!user) {
-        return res.status(401).send({
-          success: false,
-          message: "User no longer exists.",
-        });
-      }
-      req.user = user;
+      await db.transaction(async (tx) => {
+        const [user] = await tx
+          .select({ id: profiles.id })
+          .from(profiles)
+          .where(eq(profiles.userId, decoded.id));
+        if (!user) {
+          return res.status(401).send({
+            success: false,
+            message: "User no longer exists.",
+          });
+        }
+        req.user = user;
+      });
       return next();
     } catch {
       return res.status(401).send({
@@ -60,24 +58,22 @@ export async function requireAuth(
 
   try {
     const decoded = jwt.verify(accessToken, SECRET_KEY) as { id: string };
-    const user = (
-      await Client.query(
-        /* sql */ `
-        SELECT * FROM profiles
-        WHERE user_id=$1;
-      `,
-        [decoded.id],
-      )
-    ).rows[0];
 
-    if (!user) {
-      return res.status(401).send({
-        success: false,
-        message: "User no longer exists.",
-      });
-    }
-    req.user = user;
-    next();
+    await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.userId, decoded.id));
+
+      if (!user) {
+        return res.status(401).send({
+          success: false,
+          message: "User no longer exists.",
+        });
+      }
+      req.user = user;
+    });
+    return next();
   } catch (error) {
     return res.status(401).send({
       success: false,
