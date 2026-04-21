@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { requireAuth } from "./require";
 import { profiles, users } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { sendWelcomeEmail } from "~/utils/email/welcome";
 
 export function AuthRouteSetup() {
   app.post("/api/auth/signup", async (req, res) => {
@@ -35,16 +36,19 @@ export function AuthRouteSetup() {
         });
       });
 
+      sendWelcomeEmail(email, {
+        name: name,
+        loginUrl: "https://tamber.kiseki-miracle.dev",
+      }).catch((err) => console.error("Mail delivery failed:", err));
+
       return res.status(201).send({
         success: true,
         message: "Account created successfully.",
       });
-    } catch (error: unknown) {
-      if (
-        error instanceof DatabaseError &&
-        error.code === "23505" &&
-        error.constraint === "users_email_key"
-      ) {
+    } catch (error: any) {
+      const errorCode = error?.code || error?.err?.code || error?.cause?.code;
+
+      if (errorCode === "23505") {
         return res.status(409).send({
           success: false,
           message: "An account registered with that email already exists.",

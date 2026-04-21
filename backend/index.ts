@@ -4,23 +4,29 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { Server } from "socket.io";
 import { createServer } from "node:http";
+import SocketRoutes from "./routes/socket";
 
 const app = express();
 const port = 3210;
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "https://tamber.kiseki-miracle.dev",
+  "https://hoppscotch.io", // ← add this for web Hoppscotch
+  "http://localhost:3000", // ← add this if using Hoppscotch desktop app
+];
+const SECRET_KEY = "3uAqFu0ZrDs7Wur9eGx0HwTV6UFoASG2P5T6dqSyRhW";
 
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://tamber.kiseki-miracle.dev"],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   },
 });
 
-const SECRET_KEY = "3uAqFu0ZrDs7Wur9eGx0HwTV6UFoASG2P5T6dqSyRhW";
-
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://tamber.kiseki-miracle.dev"],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   }),
 );
@@ -39,9 +45,8 @@ server.listen(port, () => {
 });
 
 // Handle client connections
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("Client connected");
-
   // Handle messages from the client
   socket.on("message", (message) => {
     console.log("Message received:", message);
@@ -49,6 +54,9 @@ io.on("connection", (socket) => {
     // Send message to all clients, including the one that sent the message
     io.emit("message", message);
   });
+
+  await SocketRoutes(socket);
+  console.log("User", socket.data.user);
 
   // Handle disconnections
   socket.on("disconnect", () => {

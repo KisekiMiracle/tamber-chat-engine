@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { SECRET_KEY } from "~/index";
 import { Client, db } from "~/utils/db";
 import { profiles, users } from "~/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 
 export async function requireAuth(
   req: Request,
@@ -11,6 +11,7 @@ export async function requireAuth(
   next: NextFunction,
 ) {
   const { accessToken, refreshToken } = req.cookies;
+  const profilesCols = getTableColumns(profiles);
 
   if (!accessToken) {
     if (!refreshToken) {
@@ -36,7 +37,7 @@ export async function requireAuth(
 
       await db.transaction(async (tx) => {
         const [user] = await tx
-          .select({ id: profiles.id })
+          .select({ ...profilesCols })
           .from(profiles)
           .where(eq(profiles.userId, decoded.id));
         if (!user) {
@@ -61,7 +62,7 @@ export async function requireAuth(
 
     await db.transaction(async (tx) => {
       const [user] = await tx
-        .select({ id: profiles.id })
+        .select({ ...profilesCols })
         .from(profiles)
         .where(eq(profiles.userId, decoded.id));
 

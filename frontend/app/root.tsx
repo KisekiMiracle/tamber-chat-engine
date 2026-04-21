@@ -9,6 +9,9 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { Toast } from "@base-ui/react/toast";
+import { ToastList } from "~/components/toasts/toast";
+import styles from "./button.module.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -33,7 +36,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <Toast.Provider>
+          {children}
+          <Toast.Portal>
+            <Toast.Viewport className={styles.Viewport}>
+              <ToastList />
+            </Toast.Viewport>
+          </Toast.Portal>
+        </Toast.Provider>{" "}
         <ScrollRestoration />
         <Scripts />
       </body>
